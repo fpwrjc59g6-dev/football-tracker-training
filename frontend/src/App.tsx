@@ -37,11 +37,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const { checkAuth } = useAuthStore();
+  const { checkAuth, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    // Only check auth on initial load if we think we're authenticated
+    // This prevents unnecessary API calls and potential race conditions
+    const token = localStorage.getItem('token');
+    if (token && !isAuthenticated) {
+      checkAuth();
+    }
+  }, []);
 
   return (
     <BrowserRouter>
