@@ -68,13 +68,20 @@ export const useAuthStore = create<AuthState>()(
             token,
             isAuthenticated: true,
           });
-        } catch {
-          localStorage.removeItem('token');
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-          });
+        } catch (error) {
+          // Only clear auth on explicit 401 Unauthorized, not on network errors
+          // This prevents logout on temporary network issues
+          const status = (error as { response?: { status?: number } })?.response?.status;
+          if (status === 401) {
+            localStorage.removeItem('token');
+            set({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+            });
+          }
+          // For other errors (network, etc), keep the user logged in
+          // They can try again or the next request will succeed
         }
       },
 

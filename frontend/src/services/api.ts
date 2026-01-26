@@ -8,9 +8,6 @@ import type {
 // API base URL - will be configured for production
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
-// Track when we last logged in to avoid redirect race conditions
-let lastLoginTime = 0;
-
 // Axios instance with auth interceptor
 const api = axios.create({
   baseURL: API_URL,
@@ -28,29 +25,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors
+// Handle auth errors - let React handle redirects, don't force page reload
 api.interceptors.response.use(
-  (response) => {
-    // Track successful login time
-    if (response.config.url?.includes('/auth/login')) {
-      lastLoginTime = Date.now();
-    }
-    return response;
-  },
+  (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Don't redirect if we're already on login page or if this was the login request
-      const isLoginRequest = error.config?.url?.includes('/auth/login');
-      const isOnLoginPage = window.location.pathname === '/login';
-      // Grace period after login to avoid race conditions (5 seconds)
-      const justLoggedIn = Date.now() - lastLoginTime < 5000;
-
-      if (!isLoginRequest && !isOnLoginPage && !justLoggedIn) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('auth-storage');
-        window.location.href = '/login';
-      }
-    }
+    // Don't auto-redirect on 401 - let React Router handle auth state
+    // This prevents race conditions and allows proper state management
     return Promise.reject(error);
   }
 );
