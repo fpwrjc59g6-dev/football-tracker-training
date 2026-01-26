@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 days
 
     # CORS - allowed origins for frontend
-    cors_origins: str = "http://localhost:3000,http://localhost:5173"
+    cors_origins: str = "http://localhost:3000,http://localhost:5173,https://football-tracker-training.netlify.app"
 
     # File uploads
     max_upload_size: int = 100 * 1024 * 1024  # 100MB
