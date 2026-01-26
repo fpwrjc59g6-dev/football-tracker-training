@@ -289,7 +289,7 @@ class Event(Base):
     is_manually_added = Column(Boolean, default=False, nullable=False)  # Staff added this
 
     # Additional data (JSON for flexibility)
-    metadata = Column(JSON, nullable=True)
+    event_metadata = Column(JSON, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
