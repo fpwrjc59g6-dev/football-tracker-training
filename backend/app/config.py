@@ -12,8 +12,14 @@ class Settings(BaseSettings):
     debug: bool = False
     api_version: str = "v1"
 
-    # Database
+    # Database - Railway provides DATABASE_URL
     database_url: str = "postgresql://postgres:postgres@localhost:5432/football_tracker"
+
+    @property
+    def db_url(self) -> str:
+        """Get database URL, checking for Railway's DATABASE_URL first."""
+        import os
+        return os.environ.get("DATABASE_URL", self.database_url)
 
     # JWT Authentication
     secret_key: str = "CHANGE-THIS-IN-PRODUCTION-USE-STRONG-RANDOM-KEY"

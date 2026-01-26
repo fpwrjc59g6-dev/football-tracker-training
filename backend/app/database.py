@@ -5,9 +5,9 @@ from app.config import get_settings
 
 settings = get_settings()
 
-# Create engine
+# Create engine - use db_url which checks DATABASE_URL env var first
 engine = create_engine(
-    settings.database_url,
+    settings.db_url,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
