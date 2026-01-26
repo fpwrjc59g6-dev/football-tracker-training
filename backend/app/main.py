@@ -100,3 +100,16 @@ async def root():
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy"}
+
+
+@app.get("/debug/config")
+async def debug_config():
+    """Debug endpoint to verify configuration (remove in production)."""
+    import os
+    return {
+        "secret_key_hash": hash(settings.secret_key),
+        "secret_key_source": "env" if os.environ.get("SECRET_KEY") else "default",
+        "algorithm": settings.algorithm,
+        "cors_origins": settings.cors_origins,
+        "database_url_set": bool(os.environ.get("DATABASE_URL")),
+    }

@@ -1,4 +1,5 @@
 """Authentication utilities."""
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -10,6 +11,7 @@ from app.config import get_settings
 from app.database import get_db
 from app.models.user import User, UserRole
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 # Password hashing
@@ -32,11 +34,15 @@ def get_password_hash(password: str) -> str:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
+    # Convert sub to string for JWT standard compliance
+    if "sub" in to_encode:
+        to_encode["sub"] = str(to_encode["sub"])
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
     to_encode.update({"exp": expire})
+    logger.info(f"Creating token with secret_key hash: {hash(settings.secret_key)}")
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
@@ -44,9 +50,12 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 def decode_access_token(token: str) -> Optional[dict]:
     """Decode a JWT access token."""
     try:
+        logger.info(f"Decoding token with secret_key hash: {hash(settings.secret_key)}")
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        logger.info(f"Token decoded successfully, sub: {payload.get('sub')}")
         return payload
-    except JWTError:
+    except JWTError as e:
+        logger.error(f"JWT decode error: {e}")
         return None
 
 
@@ -63,10 +72,18 @@ async def get_current_user(
 
     payload = decode_access_token(token)
     if payload is None:
+        logger.error("Token decode returned None")
         raise credentials_exception
 
-    user_id: int = payload.get("sub")
-    if user_id is None:
+    user_id_str = payload.get("sub")
+    if user_id_str is None:
+        logger.error("No 'sub' in token payload")
+        raise credentials_exception
+
+    try:
+        user_id = int(user_id_str)
+    except (ValueError, TypeError):
+        logger.error(f"Could not convert sub to int: {user_id_str}")
         raise credentials_exception
 
     user = db.query(User).filter(User.id == user_id).first()
