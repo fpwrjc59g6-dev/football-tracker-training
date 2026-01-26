@@ -13,22 +13,33 @@ settings = get_settings()
 
 
 def create_initial_admin():
-    """Create initial admin user if no users exist."""
+    """Create or update initial admin user."""
     db = SessionLocal()
     try:
-        user_count = db.query(User).count()
-        if user_count == 0:
-            admin = User(
-                email="admin@footballtracker.com",
-                username="admin",
-                hashed_password=get_password_hash("admin123"),
-                full_name="System Administrator",
+        import os
+        admin_password = os.environ.get("ADMIN_PASSWORD", "FootballTracker2026!")
+
+        # Check if sean user exists
+        sean = db.query(User).filter(User.username == "sean").first()
+        if not sean:
+            # Delete old admin user if exists
+            old_admin = db.query(User).filter(User.username == "admin").first()
+            if old_admin:
+                db.delete(old_admin)
+                db.commit()
+
+            # Create new admin
+            sean = User(
+                email="sean@caldwell.at",
+                username="sean",
+                hashed_password=get_password_hash(admin_password),
+                full_name="Sean Caldwell",
                 role=UserRole.ADMIN,
                 is_active=True,
             )
-            db.add(admin)
+            db.add(sean)
             db.commit()
-            print("Initial admin user created: admin / admin123")
+            print(f"Admin user created: sean")
     finally:
         db.close()
 

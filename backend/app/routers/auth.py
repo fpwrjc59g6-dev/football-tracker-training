@@ -55,9 +55,8 @@ async def login(
 async def register(
     user_data: UserCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
 ):
-    """Register a new user (admin only)."""
+    """Register a new user (open registration for staff)."""
     # Check if username exists
     if db.query(User).filter(User.username == user_data.username).first():
         raise HTTPException(
