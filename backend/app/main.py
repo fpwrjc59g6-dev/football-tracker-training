@@ -113,3 +113,4 @@ async def debug_config():
         "cors_origins": settings.cors_origins,
         "database_url_set": bool(os.environ.get("DATABASE_URL")),
     }
+
