@@ -40,6 +40,11 @@ def create_initial_admin():
             db.add(sean)
             db.commit()
             print(f"Admin user created: sean")
+        else:
+            # Always update password hash on startup to ensure bcrypt compatibility
+            sean.hashed_password = get_password_hash(admin_password)
+            db.commit()
+            print(f"Admin password hash updated for: sean")
     finally:
         db.close()
 
