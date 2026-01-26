@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { accuracyApi, matchesApi, correctionsApi } from '../services/api';
+import { useAuthStore } from '../stores/authStore';
 import { Link } from 'react-router-dom';
 import {
   TrendingUp,
@@ -24,19 +25,27 @@ import { format } from 'date-fns';
 import clsx from 'clsx';
 
 export function DashboardPage() {
+  const { isAuthenticated, token } = useAuthStore();
+
+  // Only fetch data when authenticated and token is available
+  const enabled = isAuthenticated && !!token;
+
   const { data: dashboard, isLoading: dashboardLoading } = useQuery({
     queryKey: ['accuracy-dashboard'],
     queryFn: accuracyApi.getDashboard,
+    enabled,
   });
 
   const { data: matches } = useQuery({
     queryKey: ['recent-matches'],
     queryFn: () => matchesApi.list({ is_processed: true }),
+    enabled,
   });
 
   const { data: corrections } = useQuery({
     queryKey: ['corrections-summary'],
     queryFn: () => correctionsApi.getSummary(),
+    enabled,
   });
 
   // Prepare trend data for chart
