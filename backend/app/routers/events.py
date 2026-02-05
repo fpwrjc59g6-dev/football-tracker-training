@@ -2,7 +2,8 @@
 from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, text
+from pydantic import BaseModel
 from app.database import get_db
 from app.models.events import Event, EventType, EventCategory
 from app.models.team import Match
@@ -130,6 +131,194 @@ async def get_event_summary(
         manually_added_count=manually_added,
     )
 
+
+# ============================================================================
+# KICK-OFF CALIBRATION ENDPOINTS
+# ============================================================================
+
+class KickoffCreate(BaseModel):
+    """Request body for creating a kick-off event."""
+    frame_number: int
+    timestamp_ms: int
+    half: int = 1
+    team: Optional[str] = None  # 'team_a' or 'team_b'
+
+
+class KickoffResponse(BaseModel):
+    """Response for kick-off data."""
+    id: int
+    half: int
+    frame_start: int
+    timestamp_ms: int
+    team: Optional[str] = None
+    is_verified: bool = False
+    is_manually_added: bool = False
+
+
+@router.get("/kickoffs")
+async def get_match_kickoffs(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get kick-off events for a match (used for timestamp calibration)."""
+    kickoffs = db.query(Event).filter(
+        Event.match_id == match_id,
+        Event.event_type == EventType.kickoff
+    ).order_by(Event.half).all()
+
+    return {
+        "kickoffs": [
+            {
+                "id": k.id,
+                "half": k.half,
+                "frame_start": k.frame_start,
+                "timestamp_ms": k.timestamp_ms,
+                "team": k.metadata.get('team') if k.metadata else None,
+                "is_verified": k.is_verified or False,
+                "is_manually_added": k.is_manually_added or False
+            }
+            for k in kickoffs
+        ],
+        "has_first_half": any(k.half == 1 for k in kickoffs),
+        "has_second_half": any(k.half == 2 for k in kickoffs)
+    }
+
+
+@router.post("/kickoff")
+async def create_kickoff_event(
+    match_id: int,
+    kickoff: KickoffCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_analyst)
+):
+    """
+    Create or update a kick-off event for timestamp calibration.
+
+    This is used to mark the exact moment of kick-off in the video,
+    which serves as a reference point for aligning all other events.
+    """
+    # Verify match exists
+    match = db.query(Match).filter(Match.id == match_id).first()
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    # Check if kick-off already exists for this half
+    existing = db.query(Event).filter(
+        Event.match_id == match_id,
+        Event.event_type == EventType.kickoff,
+        Event.half == kickoff.half
+    ).first()
+
+    if existing:
+        # Update existing kick-off
+        existing.frame_start = kickoff.frame_number
+        existing.frame_end = kickoff.frame_number
+        existing.timestamp_ms = kickoff.timestamp_ms
+        existing.match_minute = 0 if kickoff.half == 1 else 45
+        existing.match_second = 0
+        existing.is_verified = True
+        existing.is_manually_added = True
+        if kickoff.team:
+            existing.metadata = existing.metadata or {}
+            existing.metadata['team'] = kickoff.team
+        db.commit()
+        return {
+            "message": f"Kick-off for half {kickoff.half} updated",
+            "id": existing.id,
+            "action": "updated"
+        }
+    else:
+        # Create new kick-off event
+        new_kickoff = Event(
+            match_id=match_id,
+            event_type=EventType.kickoff,
+            event_category=EventCategory.set_piece,
+            frame_start=kickoff.frame_number,
+            frame_end=kickoff.frame_number,
+            timestamp_ms=kickoff.timestamp_ms,
+            match_minute=0 if kickoff.half == 1 else 45,
+            match_second=0,
+            half=kickoff.half,
+            is_ai_generated=False,
+            is_manually_added=True,
+            is_verified=True,
+            ai_confidence=1.0,
+            metadata={'team': kickoff.team} if kickoff.team else {}
+        )
+        db.add(new_kickoff)
+        db.commit()
+        return {
+            "message": f"Kick-off for half {kickoff.half} created",
+            "id": new_kickoff.id,
+            "action": "created"
+        }
+
+
+class TimestampOffsetApply(BaseModel):
+    """Request body for applying timestamp offset."""
+    offset_ms: int
+    offset_frames: int
+    half: Optional[int] = None  # Apply to specific half or all
+
+
+@router.post("/apply-offset")
+async def apply_timestamp_offset(
+    match_id: int,
+    offset: TimestampOffsetApply,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_analyst)
+):
+    """
+    Apply a timestamp offset to all events in the match.
+
+    This is used after calibrating kick-off to align all events with the video.
+    """
+    # Apply offset using raw SQL for efficiency
+    if offset.half:
+        db.execute(text("""
+            UPDATE events
+            SET
+                frame_start = frame_start + :offset_frames,
+                frame_end = CASE WHEN frame_end IS NOT NULL THEN frame_end + :offset_frames ELSE NULL END,
+                timestamp_ms = timestamp_ms + :offset_ms
+            WHERE match_id = :match_id AND half = :half
+        """), {
+            "offset_frames": offset.offset_frames,
+            "offset_ms": offset.offset_ms,
+            "match_id": match_id,
+            "half": offset.half
+        })
+    else:
+        db.execute(text("""
+            UPDATE events
+            SET
+                frame_start = frame_start + :offset_frames,
+                frame_end = CASE WHEN frame_end IS NOT NULL THEN frame_end + :offset_frames ELSE NULL END,
+                timestamp_ms = timestamp_ms + :offset_ms
+            WHERE match_id = :match_id
+        """), {
+            "offset_frames": offset.offset_frames,
+            "offset_ms": offset.offset_ms,
+            "match_id": match_id
+        })
+
+    db.commit()
+
+    # Get count of affected events
+    affected = db.query(Event).filter(Event.match_id == match_id).count()
+
+    return {
+        "message": f"Offset applied to {affected} events",
+        "offset_ms": offset.offset_ms,
+        "offset_frames": offset.offset_frames,
+        "half": offset.half or "all"
+    }
+
+
+# ============================================================================
+# STANDARD EVENT CRUD
+# ============================================================================
 
 @router.post("", response_model=EventResponse)
 async def create_event(
