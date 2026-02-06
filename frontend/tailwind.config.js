@@ -7,6 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Main UI colors
+        background: '#0F0F0F',
+        card: '#1A1A1A',
+        border: '#2A2A2A',
+        'team-a': '#22C55E', // Green for home team / success
+        'team-b': '#3B82F6', // Blue for away team
         // Professional dark theme like BePro/Hudl
         brand: {
           50: '#eef9ff',

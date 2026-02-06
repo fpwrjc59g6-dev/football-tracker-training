@@ -1,5 +1,5 @@
 """API Routers."""
-from app.routers import auth, teams, players, matches, tracks, events, calibration, corrections, training, accuracy
+from app.routers import auth, teams, players, matches, tracks, events, calibration, corrections, training, accuracy, detections
 
 __all__ = [
     "auth",
@@ -12,4 +12,5 @@ __all__ = [
     "corrections",
     "training",
     "accuracy",
+    "detections",
 ]

@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from app.config import get_settings
 from app.database import engine, Base, SessionLocal
-from app.routers import auth, teams, players, matches, tracks, events, calibration, corrections, training, accuracy
+from app.routers import auth, teams, players, matches, tracks, events, calibration, corrections, training, accuracy, detections
 from app.models.user import User, UserRole
 from app.auth import get_password_hash
 
@@ -89,6 +89,7 @@ app.include_router(calibration.router, prefix="/api/v1")
 app.include_router(corrections.router, prefix="/api/v1")
 app.include_router(training.router, prefix="/api/v1")
 app.include_router(accuracy.router, prefix="/api/v1")
+app.include_router(detections.router, prefix="/api/v1")  # Detection review endpoints
 
 
 @app.get("/")
