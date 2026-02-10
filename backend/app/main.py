@@ -7,10 +7,12 @@ from app.config import get_settings
 from app.database import engine, Base, SessionLocal
 from app.routers import auth, teams, players, matches, tracks, events, calibration, corrections, training, accuracy, detections
 # Export router - import separately to handle potential issues
+EXPORT_ERROR = None
 try:
     from app.routers import export as export_router
     EXPORT_AVAILABLE = True
-except ImportError as e:
+except Exception as e:
+    EXPORT_ERROR = str(e)
     print(f"Export router not available: {e}")
     EXPORT_AVAILABLE = False
 from app.models.user import User, UserRole
@@ -166,5 +168,7 @@ async def debug_config():
         "algorithm": settings.algorithm,
         "cors_origins": settings.cors_origins,
         "database_url_set": bool(os.environ.get("DATABASE_URL")),
+        "export_available": EXPORT_AVAILABLE,
+        "export_error": EXPORT_ERROR,
     }
 
