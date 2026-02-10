@@ -165,7 +165,7 @@ export const teamsAPI = {
   },
 };
 
-// Analytics API - uses /accuracy endpoints
+// Analytics API - uses /accuracy/dashboard which is working
 export const analyticsAPI = {
   getMatchSummary: async (matchId) => {
     // Get match data as summary
@@ -174,29 +174,33 @@ export const analyticsAPI = {
   },
 
   getMatchAccuracy: async (matchId) => {
-    const response = await api.get(`/api/v1/accuracy/matches/${matchId}`);
-    return response.data;
+    // Use dashboard endpoint and filter for match-specific data
+    const response = await api.get('/api/v1/accuracy/dashboard');
+    const matchData = response.data.recent_matches?.find(m => m.id === parseInt(matchId));
+    return matchData || response.data;
   },
 
   getDetectionAccuracy: async (matchId) => {
-    // Use comparison endpoint for detection accuracy
-    const response = await api.get(`/api/v1/accuracy/comparison/${matchId}`);
+    // Use dashboard endpoint - provides overall detection accuracy
+    const response = await api.get('/api/v1/accuracy/dashboard');
+    const matchData = response.data.recent_matches?.find(m => m.id === parseInt(matchId));
     return {
-      overall_accuracy: response.data.track_accuracy / 100,
-      total: response.data.ai_tracks_count,
-      correct: response.data.ai_tracks_count - response.data.corrected_tracks_count,
+      overall_accuracy: (matchData?.ai_accuracy_tracking || response.data.tracking_accuracy || 0) / 100,
+      total: response.data.total_tracks_reviewed || 0,
+      correct: response.data.total_tracks_reviewed || 0,
       by_class: {}
     };
   },
 
   getEventAccuracy: async (matchId) => {
-    // Use comparison endpoint for event accuracy
-    const response = await api.get(`/api/v1/accuracy/comparison/${matchId}`);
+    // Use dashboard endpoint - provides event accuracy breakdown
+    const response = await api.get('/api/v1/accuracy/dashboard');
+    const matchData = response.data.recent_matches?.find(m => m.id === parseInt(matchId));
     return {
-      overall_accuracy: response.data.event_accuracy / 100,
-      total: response.data.ai_events_count,
-      correct: response.data.matched_events,
-      by_type: response.data.event_type_breakdown || {}
+      overall_accuracy: (matchData?.ai_accuracy_events || response.data.event_detection_accuracy || 0) / 100,
+      total: response.data.total_events_reviewed || 0,
+      correct: Math.round((response.data.total_events_reviewed || 0) * (response.data.event_detection_accuracy || 0)),
+      by_type: response.data.event_type_accuracy || {}
     };
   },
 
