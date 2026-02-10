@@ -17,23 +17,32 @@ def run_migrations():
     """Run database migrations to add missing columns."""
     db = SessionLocal()
     try:
-        # Add is_verified column to events if it doesn't exist
-        try:
-            db.execute(text("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE"))
+        # Check and add is_verified column to events
+        result = db.execute(text("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name = 'events' AND column_name = 'is_verified'
+        """))
+        if result.fetchone() is None:
+            db.execute(text("ALTER TABLE events ADD COLUMN is_verified BOOLEAN DEFAULT FALSE"))
             db.commit()
             print("Added is_verified column to events table")
-        except Exception as e:
-            db.rollback()
-            print(f"is_verified column might already exist: {e}")
+        else:
+            print("is_verified column already exists")
 
-        # Add is_correct column to events if it doesn't exist
-        try:
-            db.execute(text("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_correct BOOLEAN"))
+        # Check and add is_correct column to events
+        result = db.execute(text("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name = 'events' AND column_name = 'is_correct'
+        """))
+        if result.fetchone() is None:
+            db.execute(text("ALTER TABLE events ADD COLUMN is_correct BOOLEAN"))
             db.commit()
             print("Added is_correct column to events table")
-        except Exception as e:
-            db.rollback()
-            print(f"is_correct column might already exist: {e}")
+        else:
+            print("is_correct column already exists")
+    except Exception as e:
+        db.rollback()
+        print(f"Migration error: {e}")
     finally:
         db.close()
 
