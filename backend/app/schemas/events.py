@@ -200,22 +200,22 @@ class EventListResponse(BaseModel):
     id: int
     match_id: int
     frame_start: int
-    timestamp_ms: Optional[int]
-    match_minute: Optional[int]
-    match_second: Optional[int]
+    timestamp_ms: Optional[int] = None
+    match_minute: Optional[int] = None
+    match_second: Optional[int] = None
     half: int
     event_type: EventType
     event_category: EventCategory
-    player_track_id: Optional[int]
-    target_track_id: Optional[int]
-    outcome_success: Optional[bool]
-    ai_confidence: Optional[float]
+    player_track_id: Optional[int] = None
+    target_track_id: Optional[int] = None
+    outcome_success: Optional[bool] = None
+    ai_confidence: Optional[float] = None
     is_ai_generated: bool
     is_corrected: bool
     is_deleted: bool
-    is_verified: Optional[bool]
-    is_correct: Optional[bool]
-    corrected_type: Optional[str]
+    is_verified: Optional[bool] = None
+    is_correct: Optional[bool] = None
+    corrected_type: Optional[str] = None
 
     class Config:
         from_attributes = True
