@@ -8,8 +8,34 @@ from app.database import engine, Base, SessionLocal
 from app.routers import auth, teams, players, matches, tracks, events, calibration, corrections, training, accuracy, detections
 from app.models.user import User, UserRole
 from app.auth import get_password_hash
+from sqlalchemy import text
 
 settings = get_settings()
+
+
+def run_migrations():
+    """Run database migrations to add missing columns."""
+    db = SessionLocal()
+    try:
+        # Add is_verified column to events if it doesn't exist
+        try:
+            db.execute(text("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE"))
+            db.commit()
+            print("Added is_verified column to events table")
+        except Exception as e:
+            db.rollback()
+            print(f"is_verified column might already exist: {e}")
+
+        # Add is_correct column to events if it doesn't exist
+        try:
+            db.execute(text("ALTER TABLE events ADD COLUMN IF NOT EXISTS is_correct BOOLEAN"))
+            db.commit()
+            print("Added is_correct column to events table")
+        except Exception as e:
+            db.rollback()
+            print(f"is_correct column might already exist: {e}")
+    finally:
+        db.close()
 
 
 def create_initial_admin():
@@ -54,6 +80,8 @@ async def lifespan(app: FastAPI):
     """Application lifespan - startup and shutdown."""
     # Startup: Create database tables
     Base.metadata.create_all(bind=engine)
+    # Run any pending migrations
+    run_migrations()
     # Create initial admin if needed
     create_initial_admin()
     yield
