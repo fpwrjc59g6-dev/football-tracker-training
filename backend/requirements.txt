@@ -22,6 +22,10 @@ email-validator==2.1.0
 numpy==1.26.3
 pandas==2.1.4
 
+# Image/Video processing (for export)
+opencv-python-headless==4.9.0.80
+PyYAML==6.0.1
+
 # CORS
 starlette==0.35.1
 
