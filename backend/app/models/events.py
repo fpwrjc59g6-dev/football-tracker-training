@@ -287,6 +287,8 @@ class Event(Base):
     is_corrected = Column(Boolean, default=False, nullable=False)
     is_deleted = Column(Boolean, default=False, nullable=False)  # Soft delete for wrong AI events
     is_manually_added = Column(Boolean, default=False, nullable=False)  # Staff added this
+    is_verified = Column(Boolean, default=False, nullable=False)  # Analyst verified this event
+    is_correct = Column(Boolean, nullable=True)  # Was AI prediction correct? (null = not reviewed)
 
     # Additional data (JSON for flexibility)
     event_metadata = Column(JSON, nullable=True)

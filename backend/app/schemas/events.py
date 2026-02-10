@@ -186,6 +186,8 @@ class EventResponse(BaseModel):
     is_corrected: bool
     is_deleted: bool
     is_manually_added: bool
+    is_verified: bool = False
+    is_correct: Optional[bool] = None
 
     # Additional data
     metadata: Optional[Dict[str, Any]]
