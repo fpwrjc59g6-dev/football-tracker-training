@@ -200,6 +200,7 @@ class EventListResponse(BaseModel):
     id: int
     match_id: int
     frame_start: int
+    timestamp_ms: Optional[int] = None
     match_minute: Optional[int] = None
     half: int
     event_type: EventType
