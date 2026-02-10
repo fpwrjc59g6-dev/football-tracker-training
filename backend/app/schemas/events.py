@@ -1,7 +1,7 @@
 """Event schemas."""
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.models.events import EventType, EventCategory, BodyPart, PassHeight, PitchZone
 
 
@@ -189,8 +189,8 @@ class EventResponse(BaseModel):
     is_verified: bool = False
     is_correct: Optional[bool] = None
 
-    # Additional data
-    metadata: Optional[Dict[str, Any]]
+    # Additional data - maps to event_metadata in database
+    metadata: Optional[Dict[str, Any]] = Field(default=None, alias="event_metadata")
 
     # Timestamps
     created_at: datetime
@@ -198,6 +198,7 @@ class EventResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class EventListResponse(BaseModel):
