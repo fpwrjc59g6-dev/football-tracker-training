@@ -117,6 +117,9 @@ class EventUpdate(BaseModel):
     # Correction
     is_corrected: Optional[bool] = None
     is_deleted: Optional[bool] = None
+    is_verified: Optional[bool] = None
+    is_correct: Optional[bool] = None
+    corrected_type: Optional[str] = None
 
     # Additional data
     metadata: Optional[Dict[str, Any]] = None
