@@ -6,6 +6,13 @@ from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.database import engine, Base, SessionLocal
 from app.routers import auth, teams, players, matches, tracks, events, calibration, corrections, training, accuracy, detections
+# Export router - import separately to handle potential issues
+try:
+    from app.routers import export as export_router
+    EXPORT_AVAILABLE = True
+except ImportError as e:
+    print(f"Export router not available: {e}")
+    EXPORT_AVAILABLE = False
 from app.models.user import User, UserRole
 from app.auth import get_password_hash
 from sqlalchemy import text
@@ -127,6 +134,10 @@ app.include_router(corrections.router, prefix="/api/v1")
 app.include_router(training.router, prefix="/api/v1")
 app.include_router(accuracy.router, prefix="/api/v1")
 app.include_router(detections.router, prefix="/api/v1")  # Detection review endpoints
+
+# Add export router if available
+if EXPORT_AVAILABLE:
+    app.include_router(export_router.router, prefix="/api/v1/export")
 
 
 @app.get("/")
