@@ -12,6 +12,7 @@ import AccuracyDashboard from './pages/AccuracyDashboard';
 import MatchLineup from './pages/MatchLineup';
 import MatchCalibration from './pages/MatchCalibration';
 import AdminUsers from './pages/AdminUsers';
+import TrainingDashboard from './pages/TrainingDashboard';
 import Layout from './components/Layout';
 
 // Protected Route component
@@ -183,6 +184,14 @@ function AppRoutes() {
               <AdminUsers />
             </Layout>
           </AdminRoute>
+        }
+      />
+      <Route
+        path="/training"
+        element={
+          <ProtectedRoute>
+            <TrainingDashboard />
+          </ProtectedRoute>
         }
       />
       {/* Catch-all redirect */}
