@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from app.config import get_settings
 from app.database import engine, Base, SessionLocal
-from app.routers import auth, teams, players, matches, tracks, events, calibration, corrections, training, accuracy, detections
+from app.routers import auth, teams, players, matches, tracks, events, calibration, corrections, training, accuracy, detections, processing
 # Export router - import separately to handle potential issues
 EXPORT_ERROR = None
 try:
@@ -136,6 +136,7 @@ app.include_router(corrections.router, prefix="/api/v1")
 app.include_router(training.router, prefix="/api/v1")
 app.include_router(accuracy.router, prefix="/api/v1")
 app.include_router(detections.router, prefix="/api/v1")  # Detection review endpoints
+app.include_router(processing.router, prefix="/api/v1")  # Video processing endpoints
 
 # Add export router if available
 if EXPORT_AVAILABLE:

@@ -210,6 +210,47 @@ export const analyticsAPI = {
   },
 };
 
+// Processing API
+export const processingAPI = {
+  getStatus: async (matchId) => {
+    const response = await api.get(`/api/v1/processing/status/${matchId}`);
+    return response.data;
+  },
+
+  startProcessing: async (matchId, options = {}) => {
+    const response = await api.post(`/api/v1/processing/start/${matchId}`, options);
+    return response.data;
+  },
+
+  updateStatus: async (matchId, status, progress = null) => {
+    const params = new URLSearchParams({ status });
+    if (progress !== null) params.append('progress', progress);
+    const response = await api.post(`/api/v1/processing/update-status/${matchId}?${params.toString()}`);
+    return response.data;
+  },
+
+  markComplete: async (matchId, framesProcessed = null) => {
+    const params = framesProcessed ? `?frames_processed=${framesProcessed}` : '';
+    const response = await api.post(`/api/v1/processing/complete/${matchId}${params}`);
+    return response.data;
+  },
+
+  cancelProcessing: async (matchId) => {
+    const response = await api.post(`/api/v1/processing/cancel/${matchId}`);
+    return response.data;
+  },
+
+  getQueue: async () => {
+    const response = await api.get('/api/v1/processing/queue');
+    return response.data;
+  },
+
+  getStats: async () => {
+    const response = await api.get('/api/v1/processing/stats');
+    return response.data;
+  },
+};
+
 // Export API (YOLO Training Data)
 export const exportAPI = {
   // Get export stats (preview before download)
