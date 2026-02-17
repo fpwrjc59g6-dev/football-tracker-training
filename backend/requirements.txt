@@ -26,6 +26,14 @@ pandas==2.1.4
 opencv-python-headless==4.9.0.80
 PyYAML==6.0.1
 
+# RF-DETR Detection
+rfdetr
+supervision>=0.27.0
+torch>=2.0.0
+
+# Ball Tracking (Kalman Filter)
+filterpy>=1.4.5
+
 # CORS
 starlette==0.35.1
 
